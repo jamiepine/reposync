@@ -1,0 +1,27 @@
+{
+  "name": "reposync",
+  "version": "1.0.0",
+  "description": "A handy non frustrating alternative to NPM Link that works with Metro Bundler in React Native",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./sync.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/jamiepine/reposync"
+  },
+  "author": "Jamie Pine",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/Notify.me/me.notify.core/issues"
+  },
+  "homepage": "https://gitlab.com/Notify.me/me.notify.core#README",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "chalk": "^2.4.1",
+    "chokidar": "^2.0.4",
+    "winston": "^3.1.0"
+  }
+}
