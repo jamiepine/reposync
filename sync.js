@@ -1,4 +1,4 @@
-const copyRepo = '../pulse-frameword'
+const copyRepo = '../pulse-framework'
 
 // to repos
 let repos = [
