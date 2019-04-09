@@ -14,6 +14,8 @@ const path = require('path');
 const winston = require('winston');
 const chalk = require('chalk');
 const rimraf = require("rimraf");
+const logUpdate = require('log-update');
+
 const winstonConsole = new winston.transports.Console({
   level: 'info'
 });
@@ -40,7 +42,7 @@ console.log('+-------------------------------------------------------+');
 console.log('');
 console.log(
   chalk.bold(
-    `             RepoSync Version ${
+    `                RepoSync Version ${
       require('./package.json').version
     }`
   )
@@ -96,10 +98,11 @@ function cleanDirectories() {
         let x = destPath.split('../')
         let repoName = x[x.length - 1]
         let key = `${repo}/node_modules/${repoName}`
-        console.log(key)
+        logUpdate(key)
         await rimraf.sync(key)
       }
     }
+    logUpdate('done')
     resolve()
   })
 }
@@ -114,7 +117,7 @@ function copyFile(file) {
   repos.forEach(repo => {
     try {
       fs.copyFileSync(path.resolve(file), destPath(repo, file));
-      log.info(chalk.grey('Copied file: ') + file);
+      logUpdate(chalk.grey('Copied file: ') + file);
     } catch (error) {
       log.silly(`Copy file ${file} error: ${error}`);
     }
@@ -125,7 +128,7 @@ function unlinkFile(file) {
   repos.forEach(repo => {
     try {
       fs.unlinkSync(destPath(repo, file));
-      log.info(`Deleted file ${file}`);
+      logUpdate(`Deleted file ${file}`);
     } catch (error) {
       log.silly(`Delete file ${file} error: ${error}`);
     }
@@ -138,7 +141,7 @@ function mkDir(dir) {
     if (!fs.existsSync(dest)) {
       try {
         fs.mkdirSync(dest);
-        log.info(`Created directory ${dir}`);
+        logUpdate(`Created directory ${dir}`);
       } catch (error) {
         log.silly(`Create directory ${dir} error: ${error}`);
       }
@@ -152,7 +155,7 @@ function unlinkDir(dir) {
     if (fs.existsSync(dest)) {
       try {
         fs.rmdirSync(dest);
-        log.info(`Deleted directory ${dir}`);
+        logUpdate(`Deleted directory ${dir}`);
       } catch (error) {
         log.silly(`Delete directory ${dir} error: ${error}`);
       }
@@ -238,7 +241,7 @@ for (let _watch of watchRepos)
       log.error(`Watcher error: ${error}`);
     })
     .on('all', event => {
-      log.debug(`Event triggered: ${event}`);
+      // log.debug(`Event triggered: ${event}`);
     });
   }
 
