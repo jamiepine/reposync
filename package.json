@@ -18,6 +18,7 @@
   },
   "homepage": "https://gitlab.com/Notify.me/me.notify.core#README",
   "dependencies": {
+    "rimraf": "^2.6.3"
   },
   "devDependencies": {
     "chalk": "^2.4.1",

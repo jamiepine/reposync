@@ -1,11 +1,10 @@
-const copyRepo = '../pulse-framework'
+const watchRepos = ['../pulse-framework', '../me.notify.core', '../me.notify.source']
 
 // to repos
 let repos = [
-  'me.notify.native',
-  'me.notify.webapp',
-  'me.notify.desktop',
-  'me.notify.core'
+  '../me.notify.native',
+  '../me.notify.webapp',
+  '../me.notify.desktop',
 ];
 
 // ********************************
@@ -14,6 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
 const chalk = require('chalk');
+const rimraf = require("rimraf");
 const winstonConsole = new winston.transports.Console({
   level: 'info'
 });
@@ -49,9 +49,17 @@ console.log('');
 console.log('+-------------------------------------------------------+');
 
 function searchForRepositories() {
-  const foundRepos = fs
-    .readdirSync(path.resolve('..'))
-    .filter(dir => repos.find(repo => repo === dir));
+  const foundRepos = []
+  // fs
+  //   .readdirSync(path.resolve(`${repo}`))
+  //   .filter(dir => repos.find(repo => repo === dir));
+
+  for (let _repo of repos) {
+    let _found = path.resolve(`${_repo}`)
+    if (_found) foundRepos.push(_found)
+  }
+
+
 
   if (foundRepos.length === 0) {
     log.error('No repositories found');
@@ -65,9 +73,9 @@ function searchForRepositories() {
   return foundRepos;
 }
 
-function readGitIgnore() {
+function readGitIgnore(_path) {
   return fs
-    .readFileSync(path.resolve(`${copyRepo}/.gitignore`), {
+    .readFileSync(path.resolve(`${_path}/.gitignore`), {
       encoding: 'utf-8'
     })
     .split(eol)
@@ -80,9 +88,25 @@ function readGitIgnore() {
     );
 }
 
+function cleanDirectories() {
+  return new Promise(async (resolve) => {
+    // for the dest repos
+    for (let repo of repos) {
+      for (let destPath of watchRepos) {
+        let x = destPath.split('../')
+        let repoName = x[x.length - 1]
+        let key = `${repo}/node_modules/${repoName}`
+        console.log(key)
+        await rimraf.sync(key)
+      }
+    }
+    resolve()
+  })
+}
+
 function destPath(repo, item) {
   return path.resolve(
-    `../${repo}/node_modules/${path.basename(path.resolve('.'))}/${item}`
+    `${repo}/node_modules/${path.basename(path.resolve('.'))}/${item}`
   );
 }
 
@@ -136,66 +160,74 @@ function unlinkDir(dir) {
   });
 }
 
-log.info(chalk.bold.blue('Searching for target directories...'));
-repos = searchForRepositories();
-log.info(chalk.bold.blue('Synchronising directories...'));
+async function run() {
+  log.info(chalk.bold.blue('Searching for target directories...'));
+  repos = searchForRepositories();
+  log.info(chalk.bold.blue('Cleaning directories...'));
+  await cleanDirectories();
+  log.info(chalk.bold.blue('Synchronising directories...'));
 
-const watcher = chokidar
-  .watch(path.resolve(copyRepo), {
-    persistent: true,
-    ignored: [
-      `${copyRepo}/**/.*`, // git and dot files
-      `${copyRepo}/sync.js`,
-      `${copyRepo}/node_modules`,
-      ...readGitIgnore(copyRepo)
-    ],
-    ignoreInitial: false,
-    followSymlinks: false,
-    cwd: path.resolve('.'),
-    disableGlobbing: false,
-    usePolling: true,
-    interval: 100,
-    binaryInterval: 300,
-    alwaysStat: false,
-    depth: 99,
-    awaitWriteFinish: {
-      stabilityThreshold: 2000,
-      pollInterval: 100
-    },
-    ignorePermissionErrors: false,
-    atomic: true // or a custom 'atomicity delay', in milliseconds (default 100)
-  })
-  .on('add', file => {
-    log.debug(`File ${file} has been added`);
-    copyFile(file);
-  })
-  .on('change', file => {
-    log.debug(`File ${file} has been changed`);
-    copyFile(file);
-  })
-  .on('unlink', file => {
-    log.debug(`File ${file} has been removed`);
-    unlinkFile(file);
-  })
-  .on('addDir', dir => {
-    log.debug(`Directory ${dir} has been added`);
-    mkDir(dir);
-  })
-  .on('unlinkDir', dir => {
-    log.debug(`Directory ${dir} has been removed`);
-    unlinkDir(dir);
-  })
-  .on('ready', () => {
-    log.info(chalk.green.bold('Sync complete.'));
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(0);
-    }
-    log.info(chalk.blue('Waiting for changes...'));
-    winstonConsole.level = 'debug';
-  })
-  .on('error', error => {
-    log.error(`Watcher error: ${error}`);
-  })
-  .on('all', event => {
-    log.debug(`Event triggered: ${event}`);
-  });
+
+for (let _watch of watchRepos)
+  chokidar
+    .watch(path.resolve(_watch), {
+      persistent: true,
+      ignored: [
+        `${_watch}/**/.*`, // git and dot files
+        `${_watch}/sync.js`,
+        `${_watch}/node_modules`,
+        ...readGitIgnore(_watch)
+      ],
+      ignoreInitial: false,
+      followSymlinks: false,
+      cwd: path.resolve('.'),
+      disableGlobbing: false,
+      usePolling: true,
+      interval: 100,
+      binaryInterval: 300,
+      alwaysStat: false,
+      depth: 99,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 100
+      },
+      ignorePermissionErrors: false,
+      atomic: true // or a custom 'atomicity delay', in milliseconds (default 100)
+    })
+    .on('add', file => {
+      log.debug(`File ${file} has been added`);
+      copyFile(file);
+    })
+    .on('change', file => {
+      log.debug(`File ${file} has been changed`);
+      copyFile(file);
+    })
+    .on('unlink', file => {
+      log.debug(`File ${file} has been removed`);
+      unlinkFile(file);
+    })
+    .on('addDir', dir => {
+      log.debug(`Directory ${dir} has been added`);
+      mkDir(dir);
+    })
+    .on('unlinkDir', dir => {
+      log.debug(`Directory ${dir} has been removed`);
+      unlinkDir(dir);
+    })
+    .on('ready', () => {
+      log.info(chalk.green.bold('Sync complete.'));
+      if (process.env.NODE_ENV === 'production') {
+        process.exit(0);
+      }
+      log.info(chalk.blue('Waiting for changes...'));
+      winstonConsole.level = 'debug';
+    })
+    .on('error', error => {
+      log.error(`Watcher error: ${error}`);
+    })
+    .on('all', event => {
+      log.debug(`Event triggered: ${event}`);
+    });
+  }
+
+  run()
