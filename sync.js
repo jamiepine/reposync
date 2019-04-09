@@ -160,6 +160,16 @@ function unlinkDir(dir) {
   });
 }
 
+let _done = false
+function done() {
+  if (!_done) {
+    setTimeout(() => {
+      log.info(chalk.yellow('Waiting for changes...'));
+    }, 1000);
+    _done = true
+  }
+}
+
 async function run() {
   log.info(chalk.bold.blue('Searching for target directories...'));
   repos = searchForRepositories();
@@ -215,12 +225,14 @@ for (let _watch of watchRepos)
       unlinkDir(dir);
     })
     .on('ready', () => {
-      log.info(chalk.green.bold('Sync complete.'));
       if (process.env.NODE_ENV === 'production') {
         process.exit(0);
       }
-      log.info(chalk.blue('Waiting for changes...'));
-      winstonConsole.level = 'debug';
+      setTimeout(() => {
+          log.info(`${chalk.bold.blue('Sync complete')} (${chalk.green.bold(`${_watch}`)})`);
+          done() 
+          winstonConsole.level = 'debug';
+      }, 1000);
     })
     .on('error', error => {
       log.error(`Watcher error: ${error}`);
