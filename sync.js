@@ -7,6 +7,8 @@ let repos = [
   '../me.notify.desktop',
 ];
 
+let watch = !!process.argv.find(x => x == '--watch')
+
 // ********************************
 
 const fs = require('fs');
@@ -181,6 +183,7 @@ async function run() {
   log.info(chalk.bold.blue('Synchronising directories...'));
 
 
+
 for (let _watch of watchRepos)
   chokidar
     .watch(path.resolve(_watch), {
@@ -228,7 +231,7 @@ for (let _watch of watchRepos)
       unlinkDir(dir);
     })
     .on('ready', () => {
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || !watch) {
         process.exit(0);
       }
       setTimeout(() => {
