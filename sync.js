@@ -1,4 +1,4 @@
-const watchRepos = ['../pulse-framework', '../me.notify.core', '../me.notify.source']
+const watchRepos = ['../pulse-framework', '../me.notify.core', '../me.notify.source', '../me.notify.icons']
 
 // to repos
 let repos = [
