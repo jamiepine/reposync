@@ -7,6 +7,8 @@ let repos = [
   '../me.notify.desktop',
 ];
 
+const ignoredIgnores = ['../me.notify.source'];
+
 let watch = !!process.argv.find(x => x == '--watch')
 
 // ********************************
@@ -184,16 +186,21 @@ async function run() {
 
 
 
-for (let _watch of watchRepos)
+for (let _watch of watchRepos) {
+  let ignored = [
+    `${_watch}/**/.*`, // git and dot files
+    `${_watch}/sync.js`,
+    `${_watch}/node_modules`
+  ];
+
+  if (!ignoredIgnores.includes(_watch)) {
+    ignored.push(readGitIgnore(_watch));
+  }
+
   chokidar
     .watch(path.resolve(_watch), {
       persistent: true,
-      ignored: [
-        `${_watch}/**/.*`, // git and dot files
-        `${_watch}/sync.js`,
-        `${_watch}/node_modules`,
-        ...readGitIgnore(_watch)
-      ],
+      ignored,
       ignoreInitial: false,
       followSymlinks: false,
       cwd: path.resolve('.'),
@@ -236,7 +243,7 @@ for (let _watch of watchRepos)
       }
       setTimeout(() => {
           log.info(`${chalk.bold.blue('Sync complete')} (${chalk.green.bold(`${_watch}`)})`);
-          done() 
+          done()
           winstonConsole.level = 'debug';
       }, 1000);
     })
@@ -247,5 +254,6 @@ for (let _watch of watchRepos)
       // log.debug(`Event triggered: ${event}`);
     });
   }
+}
 
   run()
