@@ -5,6 +5,7 @@ let repos = [
   '../me.notify.native',
   '../me.notify.webapp',
   '../me.notify.desktop',
+  '../me.notify.extension',
 ];
 
 let watch = !!process.argv.find(x => x == '--watch')
