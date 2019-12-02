@@ -4,7 +4,7 @@
   "description": "A handy non frustrating alternative to NPM Link that works with Metro Bundler in React Native",
   "main": "index.js",
   "scripts": {
-    "start": "node ./sync.js --watch",
+    "start": "node ./index.js --watch",
     "build": "node ./sync.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

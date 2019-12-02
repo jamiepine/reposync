@@ -1,25 +1,13 @@
-const watchRepos = ['../pulse-framework', '../me.notify.core', '../me.notify.source', '../me.notify.icons']
-
-// to repos
-let repos = [
-  '../me.notify.native',
-  '../me.notify.webapp',
-  '../me.notify.desktop',
-  '../me.notify.extension',
-];
-
-const ignoredIgnores = ['../me.notify.source'];
-
-let watch = !!process.argv.find(x => x == '--watch')
 
 // ********************************
-
 const fs = require('fs');
 const path = require('path');
 const winston = require('winston');
 const chalk = require('chalk');
 const rimraf = require("rimraf");
 const logUpdate = require('log-update');
+
+const ignoredIgnores = []
 
 const winstonConsole = new winston.transports.Console({
   level: 'info'
@@ -42,6 +30,8 @@ const log = winston.createLogger({
 });
 const chokidar = require('chokidar');
 const eol = require('os').EOL;
+
+module.exports = function sync(watchRepos = [], repos = [], watch = true) {
 
 console.log('+-------------------------------------------------------+');
 console.log('');
@@ -66,8 +56,6 @@ function searchForRepositories() {
     if (_found) foundRepos.push(_found)
   }
 
-
-
   if (foundRepos.length === 0) {
     log.error('No repositories found');
   } else {
@@ -81,18 +69,20 @@ function searchForRepositories() {
 }
 
 function readGitIgnore(_path) {
+  if (!fs.existsSync(path.resolve(`${_path}/.gitignore`))) return false;
+
   return fs
-    .readFileSync(path.resolve(`${_path}/.gitignore`), {
-      encoding: 'utf-8'
-    })
-    .split(eol)
-    .map(item => item.trim())
-    .filter(item => item.length > 0 && item.indexOf('#') === -1)
-    .map(item =>
-      item.charAt(item.length - 1) === '/'
-        ? item.substr(0, item.length - 1)
-        : item
-    );
+  .readFileSync(path.resolve(`${_path}/.gitignore`), {
+    encoding: 'utf-8'
+  })
+  .split(eol)
+  .map(item => item.trim())
+  .filter(item => item.length > 0 && item.indexOf('#') === -1)
+  .map(item =>
+    item.charAt(item.length - 1) === '/'
+      ? item.substr(0, item.length - 1)
+      : item
+  );
 }
 
 function cleanDirectories() {
@@ -100,11 +90,11 @@ function cleanDirectories() {
     // for the dest repos
     for (let repo of repos) {
       for (let destPath of watchRepos) {
-        let x = destPath.split('../')
-        let repoName = x[x.length - 1]
-        let key = `${repo}/node_modules/${repoName}`
-        logUpdate(key)
-        await rimraf.sync(key)
+        let x = destPath.split('/');
+        let repoName = x[x.length - 1];
+        let key = `${repo}/${repoName}`;
+        logUpdate(key);
+        await rimraf.sync(key);
       }
     }
     logUpdate('done')
@@ -114,14 +104,18 @@ function cleanDirectories() {
 
 function destPath(repo, item) {
   return path.resolve(
-    `${repo}/node_modules/${path.basename(path.resolve('.'))}/${item}`
+    `${repo}/${path.basename(path.resolve('.'))}/${item}`
   );
 }
 
-function copyFile(file) {
+function copyFile(file, _watch) {
   repos.forEach(repo => {
     try {
-      fs.copyFileSync(path.resolve(file), destPath(repo, file));
+      let watchDirectory = _watch.split('/');
+      watchDirectory.pop(); 
+      let fileName = `../${file.split(`${watchDirectory.join('/')}/`)[1]}`;
+
+      fs.copyFileSync(path.resolve(file), destPath(repo, fileName));
       logUpdate(chalk.grey('Copied file: ') + file);
     } catch (error) {
       log.silly(`Copy file ${file} error: ${error}`);
@@ -140,11 +134,16 @@ function unlinkFile(file) {
   });
 }
 
-function mkDir(dir) {
+function mkDir(dir, _watch) {
   repos.forEach(repo => {
-    const dest = destPath(repo, dir);
+    let watchDirectory = _watch.split('/');
+    watchDirectory.pop(); 
+    let dirName = `../${dir.split(`${watchDirectory.join('/')}/`)[1]}`;
+
+    const dest = destPath(repo, dirName);
     if (!fs.existsSync(dest)) {
       try {
+        console.log(`Making ${dest}`);
         fs.mkdirSync(dest);
         logUpdate(`Created directory ${dir}`);
       } catch (error) {
@@ -195,8 +194,10 @@ for (let _watch of watchRepos) {
   ];
 
   if (!ignoredIgnores.includes(_watch)) {
-    ignored.push(readGitIgnore(_watch));
+    let x = readGitIgnore(_watch);
+    if (x) ignored.push(x);
   }
+
 
   chokidar
     .watch(path.resolve(_watch), {
@@ -220,11 +221,11 @@ for (let _watch of watchRepos) {
     })
     .on('add', file => {
       log.debug(`File ${file} has been added`);
-      copyFile(file);
+      copyFile(file, _watch);
     })
     .on('change', file => {
       log.debug(`File ${file} has been changed`);
-      copyFile(file);
+      copyFile(file, _watch);
     })
     .on('unlink', file => {
       log.debug(`File ${file} has been removed`);
@@ -232,7 +233,7 @@ for (let _watch of watchRepos) {
     })
     .on('addDir', dir => {
       log.debug(`Directory ${dir} has been added`);
-      mkDir(dir);
+      mkDir(dir, _watch);
     })
     .on('unlinkDir', dir => {
       log.debug(`Directory ${dir} has been removed`);
@@ -246,7 +247,7 @@ for (let _watch of watchRepos) {
           log.info(`${chalk.bold.blue('Sync complete')} (${chalk.green.bold(`${_watch}`)})`);
           done()
           winstonConsole.level = 'debug';
-      }, 1000);
+      }, 5000);
     })
     .on('error', error => {
       log.error(`Watcher error: ${error}`);
@@ -258,3 +259,4 @@ for (let _watch of watchRepos) {
 }
 
   run()
+}

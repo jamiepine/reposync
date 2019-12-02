@@ -1,0 +1,21 @@
+{
+    "instances": [
+        {
+            "fromDirectories": [
+                "../pulse-framework"
+            ],
+            "toDirectories": [
+                "../pulse-debug/node_modules",
+                "../me.notify.app/node_modules"
+            ]
+        },
+        {
+            "fromDirectories": [
+                "../me.notify.app/packages/core"
+            ],
+            "toDirectories": [
+                "../pulse-debug/node_modules"
+            ]
+        }
+    ]
+}
