@@ -1,0 +1,38 @@
+<screen>
+    <Player autoplay type="hls" source={mediaStreamURL}></Player>
+    <Button show={open} action={doSomething} />
+    <Input value={someValue} />
+</screen>
+
+<logic>
+export default {
+    name: 'Test'
+    data: {
+        open: true,
+        someValue: 'hello!!'
+    }
+    staticData: {
+        mediaStreamURL: 'hls'
+        socketURL: 'hls'
+    }
+    actions: {
+        doSomething(self) {
+            Panel.shake();
+            Panel.changeTheme('dark');
+            Panel.toast('error', 'Something bad!');
+            Panel.openWebview('url');
+        }
+        getMedia() {
+            Panel.
+        }
+    }
+    onStart({ data }) {
+        Panel.socket(data.socketURL).connect();
+    }
+    events: {
+        NEW_POST: ({ collect }, payload) => collect(payload.posts, 'loaded')
+    }
+    onClose() {}
+
+}
+</logic>

@@ -108,14 +108,14 @@ function destPath(repo, item) {
   );
 }
 
-function copyFile(file, _watch) {
+ function copyFile(file, _watch) {
   repos.forEach(repo => {
     try {
       let watchDirectory = _watch.split('/');
       watchDirectory.pop(); 
       let fileName = `../${file.split(`${watchDirectory.join('/')}/`)[1]}`;
 
-      fs.copyFileSync(path.resolve(file), destPath(repo, fileName));
+       fs.copyFile(path.resolve(file), destPath(repo, fileName));
       logUpdate(chalk.grey('Copied file: ') + file);
     } catch (error) {
       log.silly(`Copy file ${file} error: ${error}`);
@@ -143,9 +143,8 @@ function mkDir(dir, _watch) {
     const dest = destPath(repo, dirName);
     if (!fs.existsSync(dest)) {
       try {
-        console.log(`Making ${dest}`);
         fs.mkdirSync(dest);
-        logUpdate(`Created directory ${dir}`);
+        logUpdate(`${chalk.grey('Created directory')} ${dir}`);
       } catch (error) {
         log.silly(`Create directory ${dir} error: ${error}`);
       }
@@ -190,14 +189,17 @@ for (let _watch of watchRepos) {
   let ignored = [
     `${_watch}/**/.*`, // git and dot files
     `${_watch}/sync.js`,
-    `${_watch}/node_modules`
+    `${_watch}/node_modules`,
   ];
 
   if (!ignoredIgnores.includes(_watch)) {
     let x = readGitIgnore(_watch);
-    if (x) ignored.push(x);
+    if (x) {
+      x.forEach(thing => {
+        ignored.push(`${_watch}/${thing}`);
+      })
+    }
   }
-
 
   chokidar
     .watch(path.resolve(_watch), {
@@ -222,6 +224,7 @@ for (let _watch of watchRepos) {
     .on('add', file => {
       log.debug(`File ${file} has been added`);
       copyFile(file, _watch);
+      logUpdate('')
     })
     .on('change', file => {
       log.debug(`File ${file} has been changed`);
@@ -245,9 +248,10 @@ for (let _watch of watchRepos) {
       }
       setTimeout(() => {
           log.info(`${chalk.bold.blue('Sync complete')} (${chalk.green.bold(`${_watch}`)})`);
+          
           done()
           winstonConsole.level = 'debug';
-      }, 5000);
+      }, 1000);
     })
     .on('error', error => {
       log.error(`Watcher error: ${error}`);
