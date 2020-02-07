@@ -84,6 +84,22 @@ function readGitIgnore(_path) {
       : item
   );
 }
+function readRepoSyncIgnore(_path) {
+  if (!fs.existsSync(path.resolve(`${_path}/.reposyncignore`))) return false;
+
+  return fs
+  .readFileSync(path.resolve(`${_path}/.reposyncignore`), {
+    encoding: 'utf-8'
+  })
+  .split(eol)
+  .map(item => item.trim())
+  .filter(item => item.length > 0 && item.indexOf('#') === -1)
+  .map(item =>
+    item.charAt(item.length - 1) === '/'
+      ? item.substr(0, item.length - 1)
+      : item
+  );
+}
 
 function cleanDirectories() {
   return new Promise(async (resolve) => {
@@ -194,6 +210,7 @@ for (let _watch of watchRepos) {
 
   if (!ignoredIgnores.includes(_watch)) {
     let x = readGitIgnore(_watch);
+    x = [...x, ...readRepoSyncIgnore(_watch)];
     if (x) {
       x.forEach(thing => {
         ignored.push(`${_watch}/${thing}`);
