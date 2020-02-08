@@ -130,8 +130,7 @@ function destPath(repo, item) {
       let watchDirectory = _watch.split('/');
       watchDirectory.pop(); 
       let fileName = `../${file.split(`${watchDirectory.join('/')}/`)[1]}`;
-
-       fs.copyFile(path.resolve(file), destPath(repo, fileName));
+      fs.copyFileSync(path.resolve(file), destPath(repo, fileName));
       logUpdate(chalk.grey('Copied file: ') + file);
     } catch (error) {
       log.silly(`Copy file ${file} error: ${error}`);
@@ -210,7 +209,7 @@ for (let _watch of watchRepos) {
 
   if (!ignoredIgnores.includes(_watch)) {
     let x = readGitIgnore(_watch);
-    x = [...x, ...readRepoSyncIgnore(_watch)];
+    x = [...x, ...(readRepoSyncIgnore(_watch) || [])];
     if (x) {
       x.forEach(thing => {
         ignored.push(`${_watch}/${thing}`);
