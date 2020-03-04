@@ -78,6 +78,9 @@ function readGitIgnore(_path) {
   .split(eol)
   .map(item => item.trim())
   .filter(item => item.length > 0 && item.indexOf('#') === -1)
+  .filter(item => {
+    return item !== 'dist'
+  })
   .map(item =>
     item.charAt(item.length - 1) === '/'
       ? item.substr(0, item.length - 1)
